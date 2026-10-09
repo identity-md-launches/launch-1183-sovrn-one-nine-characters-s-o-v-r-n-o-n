@@ -29,10 +29,7 @@ contract LifeForceVault is Guard {
 
     constructor(IPoolManager manager_, SovrnToken token_, address hook_) {
         // The hook is still under construction, so it cannot have runtime code yet.
-        if (
-            address(manager_).code.length == 0 || address(token_).code.length == 0 || IMD.code.length == 0
-                || hook_ == address(0)
-        ) {
+        if (address(manager_).code.length == 0 || address(token_).code.length == 0 || hook_ == address(0)) {
             revert Unauthorized();
         }
         token = token_;

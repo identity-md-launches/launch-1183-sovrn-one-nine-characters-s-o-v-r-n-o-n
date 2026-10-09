@@ -48,7 +48,7 @@ abstract contract Fork4663Base is Test {
         address tokenAt = _imdIsCurrency0() ? TOKEN_ABOVE_IMD : TOKEN_BELOW_IMD;
         deployCodeTo("SovrnToken.sol:SovrnToken", "", tokenAt);
         token = SovrnToken(tokenAt);
-        address at = address(uint160(0x20cc));
+        address at = address(uint160(0x28cc));
         deployCodeTo("SovrnHook.sol:SovrnHook", abi.encode(manager, token, address(this)), at);
         hook = SovrnHook(payable(at));
         vault = hook.vault();

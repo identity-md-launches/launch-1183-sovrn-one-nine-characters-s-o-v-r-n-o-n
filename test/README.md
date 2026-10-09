@@ -18,7 +18,7 @@ The existing [prepare script](../script/PrepareLaunch.s.sol), [manifest](../laun
 | LP fee / tick spacing | `12500` (1.25%) / `60` |
 | Hook fee | Sells 3.5%; buys 50% → 26.75% → 3.5% at elapsed 0 / 1800 / 3600 seconds |
 | Decay minutes remaining | 60 / 30 / 0; incomplete minutes round up |
-| Hook permissions | Exactly beforeInitialize, beforeSwap, afterSwap, beforeSwapReturnDelta, afterSwapReturnDelta; flags `8396` / `0x20cc` |
+| Hook permissions | Exactly beforeInitialize, beforeAddLiquidity, beforeSwap, afterSwap, beforeSwapReturnDelta, afterSwapReturnDelta; flags `10444` / `0x28cc` |
 | Fee destination | 100% to the constructor-created immutable vault; direct ETH if manager balance covers the fee, otherwise the whole fee as native ERC-6909 claims, id `0` |
 | Vault split | `INFERENCE_BPS = 7000`, `BUYBACK_BPS = 3000`; buyback gets `floor(value × 3000 / 10000)`, inference gets the remainder |
 | Rounding examples | 1 wei → 1/0; 10 wei → 7/3; 11 wei → 8/3 inference/buyback |

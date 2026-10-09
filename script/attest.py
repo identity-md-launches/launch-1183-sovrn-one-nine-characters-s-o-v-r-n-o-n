@@ -32,10 +32,10 @@ def build_record():
     assert manifest["hook"] == {
         "contract": "SovrnHook",
         "constructorArgs": ["$poolManager", "$token", "$factory"],
-        "permissions": ["beforeInitialize", "beforeSwap", "afterSwap", "beforeSwapReturnDelta", "afterSwapReturnDelta"],
+        "permissions": ["beforeInitialize", "beforeAddLiquidity", "beforeSwap", "afterSwap", "beforeSwapReturnDelta", "afterSwapReturnDelta"],
     }
     assert manifest["pool"] == {
-        "pairedCurrency": "0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127",
+        "pairedCurrency": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
         "fee": 12500, "tickSpacing": 60,
         "initialPrice": "45742400955009932534161870629490",
     }
@@ -81,7 +81,7 @@ def build_record():
         "kind": "univ4_hook",
         "compiler": "0.8.26+commit.8a97fa7a",
         "settings": {"evmVersion": "cancun", "viaIR": True, "optimizerRuns": 200, "bytecodeHash": "none"},
-        "hookFlags": 8396,
+        "hookFlags": 10444,
         "hookConstructorArgs": manifest["hook"]["constructorArgs"],
         "pool": manifest["pool"],
         "refuelSafe": "0xEb57c52272B90F989C41B739e2ccc5f00bF7697C",

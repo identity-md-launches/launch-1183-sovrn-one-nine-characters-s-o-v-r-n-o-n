@@ -128,27 +128,22 @@ contract LaunchTest is Test {
         _launch(false);
     }
 
-    function test_deploymentOnWrongChainReverts() public {
-        Launch memory l = _prepare(true);
-        uint256[3] memory wrong = [uint256(1), 11155111, 4664];
-        for (uint256 i; i < wrong.length; ++i) {
-            vm.chainId(wrong[i]);
-            vm.expectRevert(SovrnHook.WrongChain.selector);
-            l.factory.deploy(l.code, l.salt);
+    /// @dev The admission floor deploys the attested code on a plain local EVM with no chain id set and no code at
+    ///      IMD, so the constructors must not gate on either. The factory only launches on the right chain.
+    function test_deploymentNeedsNeitherChainIdNorIMDCode() public {
+        Launch memory l = _prepare(false);
+        uint256[3] memory chains = [uint256(1), 31337, 4664];
+        for (uint256 i; i < chains.length; ++i) {
+            uint256 snap = vm.snapshotState();
+            vm.chainId(chains[i]);
+            assertEq(l.factory.deploy(l.code, l.salt), l.expected);
+            vm.revertToState(snap);
         }
-        vm.chainId(4663);
+        vm.etch(IMD, "");
+        vm.chainId(31337);
         SovrnHook hook = SovrnHook(payable(l.factory.deploy(l.code, l.salt)));
         assertEq(address(hook), l.expected);
-    }
-
-    function test_deploymentWithoutIMDCodeReverts() public {
-        Launch memory l = _prepare(false);
-        vm.etch(IMD, "");
-        vm.expectRevert(SovrnHook.Unauthorized.selector);
-        l.factory.deploy(l.code, l.salt);
-        // Restoring IMD makes the very same deployment succeed.
-        deployCodeTo("MockERC20.sol:MockIMD", abi.encode(uint256(1e33)), IMD);
-        assertEq(l.factory.deploy(l.code, l.salt), l.expected);
+        assertGt(address(hook.vault()).code.length, 0);
     }
 
     function test_deploymentWhereTokenIsIMDReverts() public {

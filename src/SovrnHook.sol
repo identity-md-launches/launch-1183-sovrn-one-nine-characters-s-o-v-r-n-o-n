@@ -7,7 +7,7 @@ import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {Currency, CurrencyLibrary} from "v4-core/src/types/Currency.sol";
-import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
+import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "v4-core/src/types/BeforeSwapDelta.sol";
 
@@ -19,7 +19,6 @@ contract SovrnHook {
     uint256 public constant DECAY = 60 minutes;
     /// @notice IMD on Robinhood Chain (18 decimals). The only fee currency.
     address public constant IMD = 0x5F7Bb59365ce557C26dbcAa4EE9d39A4b95B7127;
-    uint256 public constant CHAIN_ID = 4663;
     IPoolManager public immutable poolManager;
     SovrnToken public immutable token;
     address public immutable factory;
@@ -38,7 +37,7 @@ contract SovrnHook {
     event FeePaid(address indexed router, bool indexed buy, uint256 grossIMD, uint256 fee, bool asClaim);
     event ClaimsRedeemed(uint256 amount);
     error Unauthorized();
-    error WrongChain();
+    error LiquidityLocked();
     error WrongPool();
     error Busy();
     error InvalidAmount();
@@ -46,10 +45,9 @@ contract SovrnHook {
     error QuoteMismatch();
 
     constructor(IPoolManager manager_, SovrnToken token_, address factory_) {
-        if (block.chainid != CHAIN_ID) revert WrongChain();
         if (
-            address(manager_).code.length == 0 || address(token_).code.length == 0 || IMD.code.length == 0
-                || address(token_) == IMD || factory_ == address(0)
+            address(manager_).code.length == 0 || address(token_).code.length == 0 || address(token_) == IMD
+                || factory_ == address(0)
         ) revert Unauthorized();
         poolManager = manager_;
         token = token_;
@@ -71,6 +69,7 @@ contract SovrnHook {
 
     function getHookPermissions() public pure returns (Hooks.Permissions memory p) {
         p.beforeInitialize = true;
+        p.beforeAddLiquidity = true;
         p.beforeSwap = true;
         p.afterSwap = true;
         p.beforeSwapReturnDelta = true;
@@ -113,6 +112,21 @@ contract SovrnHook {
         openedAt = block.timestamp;
         emit PoolOpened(block.timestamp);
         return IHooks.beforeInitialize.selector;
+    }
+
+    /// @notice During the opening decay only the launch factory may add liquidity (plus anyone in the pool's opening
+    ///         block, so an atomic seeding transaction works whichever contract performs it). An IMD-only range
+    ///         placed beside the price would otherwise turn IMD into SVO through sell flow and skip the buy fee.
+    function beforeAddLiquidity(address sender, PoolKey calldata key, ModifyLiquidityParams calldata, bytes calldata)
+        external
+        onlyManager
+        returns (bytes4)
+    {
+        _checkPool(key);
+        if (sender != factory && block.timestamp != openedAt && block.timestamp < openedAt + DECAY) {
+            revert LiquidityLocked();
+        }
+        return IHooks.beforeAddLiquidity.selector;
     }
 
     /// @notice WAD rate; 0.5e18 at opening, 0.035e18 at 60 minutes. Sells always pay NORMAL_FEE.

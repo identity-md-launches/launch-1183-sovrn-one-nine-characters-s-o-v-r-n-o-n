@@ -130,22 +130,18 @@ contract HookTest is SystemBase {
         manager.initialize(other, START_PRICE);
     }
 
-    function test_constructorRejectsWrongChain() public {
+    function test_constructorHasNoChainGate() public {
         vm.chainId(1);
-        vm.expectRevert(SovrnHook.WrongChain.selector);
-        new SovrnHook(IPoolManager(address(manager)), token, address(this));
-        // Same through the address-mining path the deploy script uses.
-        vm.expectRevert();
         deployCodeTo(
             "SovrnHook.sol:SovrnHook",
             abi.encode(IPoolManager(address(manager)), token, address(this)),
-            address(uint160(0x60cc))
+            address(uint160(0x68cc))
         );
     }
 
     /// @dev A second, uninitialized hook so beforeInitialize can be called directly (as the manager).
     function _freshHook() internal returns (SovrnHook h) {
-        address at = address(uint160(0x60cc));
+        address at = address(uint160(0x68cc));
         deployCodeTo("SovrnHook.sol:SovrnHook", abi.encode(IPoolManager(address(manager)), token, address(this)), at);
         h = SovrnHook(payable(at));
     }

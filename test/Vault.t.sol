@@ -439,15 +439,15 @@ contract VaultTest is SystemBase {
         assertEq(address(vault).balance, 0);
     }
 
-    function test_constructorRevertsWithoutIMDCodeOrOtherDependencies() public {
+    function test_constructorDoesNotRequireIMDCode() public {
         PoolManager freshManager = new PoolManager(address(this));
         SovrnToken freshToken = new SovrnToken();
         // Sanity: deployable with everything present.
         LifeForceVault ok = new LifeForceVault(freshManager, freshToken, address(this));
         assertEq(ok.imd(), IMD_ADDR);
+        // The admission floor deploys without IMD code present, so the constructor does not check for it.
         vm.etch(IMD_ADDR, "");
-        vm.expectRevert(LifeForceVault.Unauthorized.selector);
-        new LifeForceVault(freshManager, freshToken, address(this));
+        assertEq(new LifeForceVault(freshManager, freshToken, address(this)).imd(), IMD_ADDR);
     }
 
     function test_constructorRevertsForMissingManagerTokenOrHook() public {

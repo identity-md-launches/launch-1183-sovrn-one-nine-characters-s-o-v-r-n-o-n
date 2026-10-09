@@ -61,18 +61,19 @@ contract SecurityTest is SystemBase {
     function test_exactPermissionsAndFlags() public view {
         Hooks.Permissions memory expected;
         expected.beforeInitialize = true;
+        expected.beforeAddLiquidity = true;
         expected.beforeSwap = true;
         expected.afterSwap = true;
         expected.beforeSwapReturnDelta = true;
         expected.afterSwapReturnDelta = true;
         assertEq(abi.encode(hook.getHookPermissions()), abi.encode(expected));
-        assertEq(HookFlags.SOVRN_FLAGS, 8396);
-        assertEq(HookFlags.flagsOf(address(hook)), 8396);
+        assertEq(HookFlags.SOVRN_FLAGS, 10444);
+        assertEq(HookFlags.flagsOf(address(hook)), 10444);
         assertEq(abi.encode(hook.poolKey()), abi.encode(key));
     }
 
     function test_firstInitEveryFieldAndSecondInitRejected() public {
-        address at = address(uint160(0xa0cc));
+        address at = address(uint160(0xa8cc));
         deployCodeTo("SovrnHook.sol:SovrnHook", abi.encode(manager, token, address(this)), at);
         SovrnHook fresh = SovrnHook(payable(at));
         PoolKey memory correct = key;
@@ -111,10 +112,6 @@ contract SecurityTest is SystemBase {
         new SovrnHook(manager, token, address(0));
         vm.expectRevert(SovrnHook.Unauthorized.selector);
         new SovrnHook(manager, SovrnToken(IMD_ADDR), address(this));
-        vm.chainId(1);
-        vm.expectRevert(SovrnHook.WrongChain.selector);
-        new SovrnHook(manager, token, address(this));
-        vm.chainId(4663);
         address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
         assertFalse(HookFlags.matches(predicted, HookFlags.SOVRN_FLAGS));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, predicted));
